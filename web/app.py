@@ -1,39 +1,43 @@
-# web/app.py
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import streamlit as st
 import pandas as pd
 from src.metrics import load_data, compute_metrics
-from src.risk_score import compute_risk_score, normalize
 from src.risk_score import compute_risk_score, normalize, load_bounds
 
 st.title("📊 Risk Analysis Dashboard")
 
 # 1. Загрузка даних
 df = load_data('data/tasks.csv')
-st.sidebar.markdown("### Filters")
-# (тут пізніше можна додати фільтри за датами, пріоритетами тощо)
 
 # 2. Показ базових метрик
 metrics = compute_metrics(df)
 st.subheader("Core Metrics")
-st.write(pd.DataFrame.from_dict(metrics, orient='index', columns=['Value']))
+metrics_labels = {
+    "total_tasks": "Загальна кількість задач",
+    "critical_bugs": "Кількість критичних багів",
+    "blocked": "Кількість заблокованих задач",
+    "avg_dev_days": "Середнє відхилення між оцінкою і фактом (дні)",
+    "added_mid_sprint": "Кількість задач, доданих після початку спринту",
+    "avg_duration_days": "Середня тривалість задач (дні)",
+    "pct_on_estimate": "% задач, що завершені в межах оцінки",
+    "total_bugs": "Загальна кількість багів",
+    "total_reopened": "Кількість перевідкритих задач"
+}
 
-# 3. Risk Score
-# Для demo: межі за історією можна захардкодити або динамічно вирахувати
+# Виведення метрик із новими назвами
+metrics_df = pd.DataFrame.from_dict(metrics, orient='index', columns=['Value'])
+metrics_df.index = metrics_df.index.map(lambda x: metrics_labels.get(x, x))  # мапінг на людські назви
+st.write(metrics_df)
+
+# 3. Ризиковий бал
 bounds = load_bounds('data/history.csv')
 risk = compute_risk_score(metrics, bounds)
-st.subheader(f"Overall Risk Score: {risk}")
-# Порогові позначки
-if risk < 0.3:
-    st.success("Low Risk")
-elif risk < 0.6:
-    st.warning("Medium Risk")
-else:
-    st.error("High Risk")
+st.subheader(f"Загальний Risk Score: {risk}")
 
 # 4. Деталізація за метриками
-st.subheader("Metric Breakdown")
+st.subheader("Деталізація по метриках")
 for k, v in metrics.items():
-    st.write(f"**{k}**: {v} (norm: {round(normalize(v, *bounds[k]), 2)})")
+    label = metrics_labels.get(k, k)
+    st.write(f"**{label}:** {v} (нормалізовано: {round(normalize(v, *bounds[k]), 2)})")
