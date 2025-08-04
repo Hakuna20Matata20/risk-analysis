@@ -4,14 +4,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-
-def generate_tasks(n_sprints: int = 5, tasks_per_sprint: int = 200) -> pd.DataFrame:
+def generate_tasks(n_sprints: int = 20) -> pd.DataFrame:
     """
-    Генерує синтетичні дані задач по кількох спринтах.
+    Генерує синтетичні дані задач для кількох спринтів з випадковою кількістю задач.
 
     Параметри:
     - n_sprints: кількість спринтів
-    - tasks_per_sprint: кількість задач в кожному спринті
 
     Повертає:
     - DataFrame з полями:
@@ -22,10 +20,12 @@ def generate_tasks(n_sprints: int = 5, tasks_per_sprint: int = 200) -> pd.DataFr
     all_data = []
 
     for sprint in range(1, n_sprints + 1):
-        # Початок спринту: відступаємо на 14 днів * (кількість спринтів - поточний +1)
+        # Випадкова кількість задач у цьому спринті від 150 до 300
+        tasks_count = np.random.randint(150, 301)
+        # Початок спринту: відступ у днях від поточної дати
         sprint_start = datetime.now() - timedelta(days=14 * (n_sprints - sprint + 1))
 
-        for i in range(tasks_per_sprint):
+        for i in range(tasks_count):
             estimation = np.random.randint(1, 8)  # очікувані дні
             actual = max(1, int(np.random.normal(loc=estimation, scale=2)))
             created_offset = np.random.randint(0, 7)  # дні після старту спринту
@@ -46,7 +46,7 @@ def generate_tasks(n_sprints: int = 5, tasks_per_sprint: int = 200) -> pd.DataFr
 
             all_data.append({
                 'sprint_id': sprint,
-                'task_id': f'S{str(sprint).zfill(2)}T{i + 1}',
+                'task_id': f'S{str(sprint).zfill(2)}T{i+1}',
                 'estimation_days': estimation,
                 'actual_days': actual,
                 'created': created,
@@ -60,10 +60,8 @@ def generate_tasks(n_sprints: int = 5, tasks_per_sprint: int = 200) -> pd.DataFr
 
     return pd.DataFrame(all_data)
 
-
 if __name__ == '__main__':
-    # Параметри генерації: 5 спринтів по 200 задач
-    df = generate_tasks(n_sprints=5, tasks_per_sprint=200)
-    # Зберігаємо результат
+    # Генеруємо дані для 20 спринтів
+    df = generate_tasks(n_sprints=20)
     df.to_csv('data/tasks.csv', index=False)
     print(f"Generated data/tasks.csv with {len(df)} records across {df['sprint_id'].nunique()} sprints")
